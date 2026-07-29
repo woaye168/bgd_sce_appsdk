@@ -1,0 +1,7 @@
+{
+    "name": "visual-injector",
+    "version": "0.1.0",
+    "description": "扫描 API 模块生成星火编辑器可视化 JSON（函数/类/方法）",
+    "author": "BGD",
+    "hooks": ["after_build"]
+}
