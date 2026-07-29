@@ -1,11 +1,12 @@
 {
     "plugins": [
         {
-            "name": "visual-injector",
-            "version": "0.1.0",
-            "description": "扫描 API 模块生成星火编辑器可视化 JSON（函数/类/方法）",
+            "id": "visual-injector",
+            "name": "模块To触编",
+            "version": "0.0.1",
+            "description": "把api下的Lua模块注入到触发编辑器中供触编调用。",
             "author": "BGD",
-            "download_url": "https://raw.githubusercontent.com/woaye168/bgd_sce_plugins/main/plugins/visual-injector/visual_injector.dll",
+            "download_url": "https://github.com/woaye168/bgd_sce_plugins/releases/download/v0.0.1/visual_injector.dll",
             "checksum": ""
         }
     ]
