@@ -8,6 +8,6 @@ name = "visual_injector"
 crate-type = ["cdylib"]
 
 [dependencies]
-bgd_sce_tools_sdk = { path = "../../sdk" }
+bgd_sce_tools_sdk = "0.1"
 serde_json = "1"
 rand = "0.8"

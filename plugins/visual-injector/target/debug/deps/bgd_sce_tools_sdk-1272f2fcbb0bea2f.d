@@ -1,0 +1,9 @@
+D:\sce_online\Res\maps\bgd_sce_plugins\plugins\visual-injector\target\debug\deps\bgd_sce_tools_sdk-1272f2fcbb0bea2f.d: C:\Users\woaye\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bgd_sce_tools_sdk-0.1.0\src\lib.rs C:\Users\woaye\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bgd_sce_tools_sdk-0.1.0\src\config.rs C:\Users\woaye\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bgd_sce_tools_sdk-0.1.0\src\context.rs C:\Users\woaye\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bgd_sce_tools_sdk-0.1.0\src\error.rs C:\Users\woaye\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bgd_sce_tools_sdk-0.1.0\src\traits.rs
+
+D:\sce_online\Res\maps\bgd_sce_plugins\plugins\visual-injector\target\debug\deps\libbgd_sce_tools_sdk-1272f2fcbb0bea2f.rmeta: C:\Users\woaye\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bgd_sce_tools_sdk-0.1.0\src\lib.rs C:\Users\woaye\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bgd_sce_tools_sdk-0.1.0\src\config.rs C:\Users\woaye\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bgd_sce_tools_sdk-0.1.0\src\context.rs C:\Users\woaye\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bgd_sce_tools_sdk-0.1.0\src\error.rs C:\Users\woaye\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bgd_sce_tools_sdk-0.1.0\src\traits.rs
+
+C:\Users\woaye\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bgd_sce_tools_sdk-0.1.0\src\lib.rs:
+C:\Users\woaye\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bgd_sce_tools_sdk-0.1.0\src\config.rs:
+C:\Users\woaye\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bgd_sce_tools_sdk-0.1.0\src\context.rs:
+C:\Users\woaye\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bgd_sce_tools_sdk-0.1.0\src\error.rs:
+C:\Users\woaye\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bgd_sce_tools_sdk-0.1.0\src\traits.rs:
