@@ -224,15 +224,15 @@ const UI_TEMPLATE: &str = r##"<div class="vi-root">
 .vi-btn-secondary:hover { background:#475569; }
 .vi-btn-danger { background:#be123c; }
 .vi-btn-danger:hover { background:#9f1239; }
-.vi-tree { max-height:400px; overflow-y:auto; }
+.vi-tree { max-height:400px; overflow-y:auto; overflow-x:hidden; }
 .vi-tree-dir { margin-bottom:4px; }
-.vi-tree-dir-header { display:flex; align-items:center; gap:6px; padding:6px 8px; background:#1e293b; border-radius:4px; cursor:pointer; font-size:13px; font-weight:600; color:#cbd5e1; }
+.vi-tree-dir-header { display:flex; align-items:center; gap:6px; padding:6px 8px; background:#1e293b; border-radius:4px; cursor:pointer; font-size:13px; font-weight:600; color:#cbd5e1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .vi-tree-dir-header:hover { background:#334155; }
-.vi-tree-dir-header input { accent-color:#4f46e5; }
+.vi-tree-dir-header input { accent-color:#4f46e5; flex-shrink:0; }
 .vi-tree-children { padding-left:24px; margin-top:2px; }
-.vi-tree-file { display:flex; align-items:center; gap:6px; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:13px; color:#94a3b8; }
+.vi-tree-file { display:flex; align-items:center; gap:6px; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:13px; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .vi-tree-file:hover { background:#1e293b; color:#e2e8f0; }
-.vi-tree-file input { accent-color:#4f46e5; }
+.vi-tree-file input { accent-color:#4f46e5; flex-shrink:0; }
 .vi-empty { color:#64748b; font-size:13px; padding:16px; text-align:center; }
 .vi-field { display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:13px; }
 .vi-field label { width:120px; color:#cbd5e1; }
