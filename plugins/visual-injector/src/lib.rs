@@ -3,7 +3,7 @@
 //!
 //! v0.2：移除构建期自动注册（BuildHook），改为在插件界面勾选模块后手动注册/卸载。
 
-use bgd_sce_tools_sdk::{Plugin, SettingsHook, UiHook};
+use bgd_sce_tools_sdk::{log, LogLevel, Plugin, SettingsHook, UiHook};
 use rand::Rng;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -200,27 +200,7 @@ fn html_escape(s: &str) -> String {
 impl UiHook for VisualInjectorPlugin {
     fn render_ui(&self) -> String {
         let settings = self.current_settings();
-        let modules = find_bgd_root()
-            .map(|root| scan_modules(&root))
-            .unwrap_or_default();
-
-        let mut module_items = String::new();
-        for m in &modules {
-            module_items.push_str(&format!(
-                "<label class=\"vi-module-item\"><input type=\"checkbox\" class=\"vi-module\" value=\"{id}\"/> <span class=\"vi-tag\">{set}/{side}</span> {name}</label>\n",
-                id = html_escape(&m.id),
-                set = m.set,
-                side = m.side,
-                name = html_escape(&m.name),
-            ));
-        }
-        if modules.is_empty() {
-            module_items = "<div class=\"vi-empty\">未扫描到 API 模块（.bgd/{libs,src}/{common,server,client}/api/*.lua）</div>".to_string();
-        }
-
         UI_TEMPLATE
-            .replace("__MODULE_COUNT__", &modules.len().to_string())
-            .replace("__MODULES__", &module_items)
             .replace("__COMMON_KEYWORDS__", &html_escape(&settings.common_keywords))
             .replace("__FILE_PREFIX__", &html_escape(&settings.file_prefix))
     }
@@ -228,16 +208,15 @@ impl UiHook for VisualInjectorPlugin {
 
 const UI_TEMPLATE: &str = r##"<div class="vi-root">
 <style>
-.vi-root { background:#1e293b; color:#e2e8f0; font-family:"Microsoft YaHei",system-ui,sans-serif; padding:16px; border-radius:8px; }
-.vi-root h2 { margin:0 0 12px; font-size:18px; color:#f1f5f9; }
+.vi-root { background:#1e293b; color:#e2e8f0; font-family:"Microsoft YaHei",system-ui,sans-serif; padding:0; border-radius:8px; overflow:hidden; }
+.vi-tabs { display:flex; background:#0f172a; border-bottom:1px solid #334155; }
+.vi-tab { padding:10px 20px; font-size:14px; color:#94a3b8; cursor:pointer; border:none; background:none; border-bottom:2px solid transparent; }
+.vi-tab:hover { color:#e2e8f0; }
+.vi-tab.active { color:#818cf8; border-bottom-color:#818cf8; }
+.vi-panel { display:none; padding:16px; }
+.vi-panel.active { display:block; }
 .vi-section { background:#0f172a; border:1px solid #334155; border-radius:6px; padding:12px; margin-bottom:12px; }
 .vi-section-title { font-size:14px; font-weight:600; color:#cbd5e1; margin-bottom:8px; }
-.vi-module-list { max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; }
-.vi-module-item { display:flex; align-items:center; gap:6px; padding:4px 6px; border-radius:4px; cursor:pointer; font-size:13px; }
-.vi-module-item:hover { background:#1e293b; }
-.vi-module-item input { accent-color:#4f46e5; }
-.vi-tag { color:#818cf8; font-size:12px; }
-.vi-empty { color:#64748b; font-size:13px; padding:8px 0; }
 .vi-actions { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
 .vi-btn { background:#4f46e5; color:#fff; border:none; border-radius:6px; padding:8px 16px; font-size:13px; cursor:pointer; }
 .vi-btn:hover { background:#4338ca; }
@@ -245,32 +224,50 @@ const UI_TEMPLATE: &str = r##"<div class="vi-root">
 .vi-btn-secondary:hover { background:#475569; }
 .vi-btn-danger { background:#be123c; }
 .vi-btn-danger:hover { background:#9f1239; }
-.vi-field { display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:13px; }
+.vi-tree { max-height:400px; overflow-y:auto; }
+.vi-tree-dir { margin-bottom:4px; }
+.vi-tree-dir-header { display:flex; align-items:center; gap:6px; padding:6px 8px; background:#1e293b; border-radius:4px; cursor:pointer; font-size:13px; font-weight:600; color:#cbd5e1; }
+.vi-tree-dir-header:hover { background:#334155; }
+.vi-tree-dir-header input { accent-color:#4f46e5; }
+.vi-tree-children { padding-left:24px; margin-top:2px; }
+.vi-tree-file { display:flex; align-items:center; gap:6px; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:13px; color:#94a3b8; }
+.vi-tree-file:hover { background:#1e293b; color:#e2e8f0; }
+.vi-tree-file input { accent-color:#4f46e5; }
+.vi-empty { color:#64748b; font-size:13px; padding:16px; text-align:center; }
+.vi-field { display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:13px; }
 .vi-field label { width:120px; color:#cbd5e1; }
-.vi-field input { flex:1; background:#1e293b; border:1px solid #334155; border-radius:4px; color:#e2e8f0; padding:6px 8px; font-size:13px; }
+.vi-field input { flex:1; background:#1e293b; border:1px solid #334155; border-radius:4px; color:#e2e8f0; padding:8px 12px; font-size:13px; }
 .vi-field input:focus { outline:none; border-color:#4f46e5; }
-.vi-status { font-size:13px; color:#94a3b8; min-height:18px; }
+.vi-status { font-size:13px; color:#94a3b8; min-height:20px; padding:8px 16px; background:#0f172a; border-top:1px solid #334155; }
+.vi-loading { color:#64748b; font-size:13px; padding:16px; text-align:center; }
 </style>
-<h2>模块To触编</h2>
-<div class="vi-section">
-  <div class="vi-section-title">API 模块（共 __MODULE_COUNT__ 个，勾选要注册的模块）</div>
-  <div class="vi-actions">
-    <button class="vi-btn vi-btn-secondary" id="vi-check-all">全选</button>
-    <button class="vi-btn vi-btn-secondary" id="vi-uncheck-all">全不选</button>
+<div class="vi-tabs">
+  <button class="vi-tab active" data-tab="inject">注入</button>
+  <button class="vi-tab" data-tab="settings">设置</button>
+</div>
+<div class="vi-panel active" id="vi-panel-inject">
+  <div class="vi-section">
+    <div class="vi-section-title">API 模块（勾选要注册的模块）</div>
+    <div class="vi-actions">
+      <button class="vi-btn vi-btn-secondary" id="vi-check-all">全选</button>
+      <button class="vi-btn vi-btn-secondary" id="vi-uncheck-all">全不选</button>
+      <button class="vi-btn vi-btn-secondary" id="vi-refresh">刷新</button>
+    </div>
+    <div class="vi-tree" id="vi-module-tree"><div class="vi-loading">正在扫描模块...</div></div>
   </div>
-  <div class="vi-module-list">
-__MODULES__  </div>
+  <div class="vi-actions">
+    <button class="vi-btn" id="vi-register">注册到触编</button>
+    <button class="vi-btn vi-btn-danger" id="vi-uninstall">卸载已注册</button>
+  </div>
 </div>
-<div class="vi-actions">
-  <button class="vi-btn" id="vi-register">注册到触编</button>
-  <button class="vi-btn vi-btn-danger" id="vi-uninstall">卸载已注册</button>
-</div>
-<div class="vi-section">
-  <div class="vi-section-title">设置</div>
-  <div class="vi-field"><label for="vi-common-keywords">通用搜索关键词</label><input id="vi-common-keywords" value="__COMMON_KEYWORDS__"/></div>
-  <div class="vi-field"><label for="vi-file-prefix">生成文件前缀</label><input id="vi-file-prefix" value="__FILE_PREFIX__"/></div>
-  <div class="vi-actions" style="margin-bottom:0;">
-    <button class="vi-btn" id="vi-save-settings">保存设置</button>
+<div class="vi-panel" id="vi-panel-settings">
+  <div class="vi-section">
+    <div class="vi-section-title">插件设置</div>
+    <div class="vi-field"><label for="vi-common-keywords">通用搜索关键词</label><input id="vi-common-keywords" value="__COMMON_KEYWORDS__"/></div>
+    <div class="vi-field"><label for="vi-file-prefix">生成文件前缀</label><input id="vi-file-prefix" value="__FILE_PREFIX__"/></div>
+    <div class="vi-actions" style="margin-bottom:0;">
+      <button class="vi-btn" id="vi-save-settings">保存设置</button>
+    </div>
   </div>
 </div>
 <div class="vi-status" id="vi-status"></div>
@@ -279,6 +276,75 @@ __MODULES__  </div>
   function $(id) { return document.getElementById(id); }
   function bridge() { return window.bgdPlugin || {}; }
   function setStatus(msg) { var el = $("vi-status"); if (el) { el.textContent = msg; } }
+
+  // 选项卡切换
+  var tabs = document.querySelectorAll(".vi-tab");
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].onclick = function () {
+      var tab = this.getAttribute("data-tab");
+      document.querySelectorAll(".vi-tab").forEach(function (t) { t.classList.remove("active"); });
+      document.querySelectorAll(".vi-panel").forEach(function (p) { p.classList.remove("active"); });
+      this.classList.add("active");
+      $("vi-panel-" + tab).classList.add("active");
+    };
+  }
+
+  // 模块扫描（通过宿主桥接）
+  function scanModules() {
+    var tree = $("vi-module-tree");
+    tree.innerHTML = "<div class=\"vi-loading\">正在扫描模块...</div>";
+    if (!bridge().scanModules) {
+      tree.innerHTML = "<div class=\"vi-empty\">宿主桥接 window.bgdPlugin.scanModules 不可用</div>";
+      return;
+    }
+    bridge().scanModules().then(function (modules) {
+      renderTree(modules);
+    }).catch(function (err) {
+      tree.innerHTML = "<div class=\"vi-empty\">扫描失败：" + err + "</div>";
+    });
+  }
+
+  // 渲染树形模块列表
+  function renderTree(modules) {
+    var tree = $("vi-module-tree");
+    if (!modules || modules.length === 0) {
+      tree.innerHTML = "<div class=\"vi-empty\">未扫描到 API 模块</div>";
+      return;
+    }
+    // 按目录分组：src/common, src/server, src/client, libs/common, libs/server, libs/client
+    var groups = {};
+    modules.forEach(function (m) {
+      var key = m.set + "/" + m.side;
+      if (!groups[key]) { groups[key] = []; }
+      groups[key].push(m);
+    });
+    // 排序：src > libs，common > server > client
+    var order = ["src/common", "src/server", "src/client", "libs/common", "libs/server", "libs/client"];
+    var html = "";
+    order.forEach(function (key) {
+      var items = groups[key];
+      if (!items || items.length === 0) { return; }
+      items.sort(function (a, b) { return a.name.localeCompare(b.name); });
+      var dirId = "vi-dir-" + key.replace("/", "-");
+      html += "<div class=\"vi-tree-dir\">" +
+        "<label class=\"vi-tree-dir-header\"><input type=\"checkbox\" class=\"vi-dir-check\" data-dir=\"" + key + "\"/> " + key + "/api/ (" + items.length + ")</label>" +
+        "<div class=\"vi-tree-children\">";
+      items.forEach(function (m) {
+        html += "<label class=\"vi-tree-file\"><input type=\"checkbox\" class=\"vi-module\" value=\"" + m.id + "\" data-dir=\"" + key + "\"/> " + m.name + ".lua</label>";
+      });
+      html += "</div></div>";
+    });
+    tree.innerHTML = html;
+    // 目录全选联动
+    document.querySelectorAll(".vi-dir-check").forEach(function (dirCheck) {
+      dirCheck.onchange = function () {
+        var dir = this.getAttribute("data-dir");
+        var checked = this.checked;
+        document.querySelectorAll(".vi-module[data-dir=\"" + dir + "\"]").forEach(function (cb) { cb.checked = checked; });
+      };
+    });
+  }
+
   function checkedModules() {
     var boxes = document.querySelectorAll(".vi-module:checked");
     var arr = [];
@@ -286,11 +352,13 @@ __MODULES__  </div>
     return arr;
   }
   function setAll(checked) {
-    var boxes = document.querySelectorAll(".vi-module");
-    for (var i = 0; i < boxes.length; i++) { boxes[i].checked = checked; }
+    document.querySelectorAll(".vi-module, .vi-dir-check").forEach(function (cb) { cb.checked = checked; });
   }
+
   $("vi-check-all").onclick = function () { setAll(true); };
   $("vi-uncheck-all").onclick = function () { setAll(false); };
+  $("vi-refresh").onclick = function () { scanModules(); };
+
   $("vi-register").onclick = function () {
     var modules = checkedModules();
     if (modules.length === 0) { setStatus("请先勾选要注册的模块"); return; }
@@ -315,6 +383,9 @@ __MODULES__  </div>
       setStatus("设置已保存");
     } else { setStatus("宿主桥接 window.bgdPlugin 不可用"); }
   };
+
+  // 初始化扫描
+  scanModules();
 })();
 </script>
 </div>"##;
@@ -335,7 +406,7 @@ impl SettingsHook for VisualInjectorPlugin {
         let v: Value = match serde_json::from_str(settings) {
             Ok(v) => v,
             Err(e) => {
-                eprintln!("[visual-injector] 无法解析消息: {e}");
+                log("visual-injector", LogLevel::Error, &format!("无法解析消息: {e}"));
                 return;
             }
         };
@@ -345,20 +416,20 @@ impl SettingsHook for VisualInjectorPlugin {
             Some("register") => {
                 let modules = parse_module_ids(&v);
                 if modules.is_empty() {
-                    eprintln!("[visual-injector] register：未勾选任何模块");
+                    log("visual-injector", LogLevel::Warn, "register：未勾选任何模块");
                     return;
                 }
                 let settings = self.current_settings();
                 match register_modules(&modules, &settings) {
-                    Ok(count) => println!("[visual-injector] 注册完成，生成可视化 JSON {count} 个"),
-                    Err(e) => eprintln!("[visual-injector] 注册失败: {e}"),
+                    Ok(count) => log("visual-injector", LogLevel::Info, &format!("注册完成，生成可视化 JSON {count} 个")),
+                    Err(e) => log("visual-injector", LogLevel::Error, &format!("注册失败: {e}")),
                 }
             }
             Some("uninstall") => {
                 let settings = self.current_settings();
                 match uninstall_registered(&settings) {
-                    Ok(count) => println!("[visual-injector] 卸载完成，删除文件 {count} 个"),
-                    Err(e) => eprintln!("[visual-injector] 卸载失败: {e}"),
+                    Ok(count) => log("visual-injector", LogLevel::Info, &format!("卸载完成，删除文件 {count} 个")),
+                    Err(e) => log("visual-injector", LogLevel::Error, &format!("卸载失败: {e}")),
                 }
             }
             _ => {
@@ -425,7 +496,7 @@ fn register_modules(module_ids: &[String], settings: &PluginSettings) -> Result<
     for id in module_ids {
         let parts: Vec<&str> = id.split('/').collect();
         if parts.len() != 3 {
-            eprintln!("[visual-injector] 跳过无效模块标识: {id}");
+            log("visual-injector", LogLevel::Warn, &format!("跳过无效模块标识: {id}"));
             continue;
         }
         let (set, side, module) = (parts[0], parts[1], parts[2]);
