@@ -1,8 +1,8 @@
 {
     "id": "visual-injector",
     "name": "模块To触编",
-    "version": "0.0.1",
+    "version": "0.2.0",
     "description": "把api下的Lua模块注入到触发编辑器中供触编调用。",
     "author": "BGD",
-    "hooks": ["after_build"]
+    "hooks": ["ui", "settings"]
 }

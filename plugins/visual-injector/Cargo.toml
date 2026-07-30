@@ -1,6 +1,6 @@
 [package]
 name = "visual_injector"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [lib]
@@ -8,6 +8,6 @@ name = "visual_injector"
 crate-type = ["cdylib"]
 
 [dependencies]
-bgd_sce_tools_sdk = "0.1"
+bgd_sce_tools_sdk = "0.2"
 serde_json = "1"
 rand = "0.8"

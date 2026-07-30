@@ -4,9 +4,9 @@ version = 4
 
 [[package]]
 name = "bgd_sce_tools_sdk"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "889393b054c88bd9cf8bd4d00b9b38765bf66e56e891db162f29f62f5c7c9ff0"
+checksum = "915036035e55c95cda1010ca5ca94055b557a4f2d684b91387d18f69106599eb"
 dependencies = [
  "serde",
  "serde_json",
@@ -198,7 +198,7 @@ checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
 
 [[package]]
 name = "visual_injector"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "bgd_sce_tools_sdk",
  "rand",
