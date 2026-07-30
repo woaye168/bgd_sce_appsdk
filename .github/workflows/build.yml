@@ -41,6 +41,8 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 完整历史，用于归纳版本间提交
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
