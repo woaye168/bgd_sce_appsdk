@@ -47,29 +47,40 @@ jobs:
         with:
           path: dist/
 
+      - name: Generate release notes
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $repo = "${{ github.repository }}"
+          $prev = git tag --sort=-v:refname | Where-Object { $_ -ne $tag } | Select-Object -First 1
+          $range = if ($prev) { "$prev..$tag" } else { "$tag" }
+          $commits = git log $range --pretty=format:"- %s (``%h``)" --no-merges
+          $lines = @()
+          $lines += "## 版本说明"
+          $lines += ""
+          if ($prev) { $lines += "本版本相对 ``$prev`` 的全部变更如下：" } else { $lines += "首个版本，包含全部提交：" }
+          $lines += ""
+          $lines += "### What's Changed"
+          $lines += ""
+          if ($commits) { $lines += $commits } else { $lines += "- 无代码变更" }
+          $lines += ""
+          if ($prev) { $lines += "**Full Changelog**: https://github.com/$repo/compare/$prev...$tag" }
+          $body = $lines -join "`n"
+          "body<<EOF" | Out-File $env:GITHUB_OUTPUT -Append -Encoding utf8
+          $body | Out-File $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "EOF" | Out-File $env:GITHUB_OUTPUT -Append -Encoding utf8
+        id: notes
+
       - name: Get version from tag
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: Read version notes
-        id: notes
-        run: |
-          if (Test-Path version.txt) {
-            $content = Get-Content version.txt -Raw
-            echo "NOTES<<EOF" >> $env:GITHUB_OUTPUT
-            echo "$content" >> $env:GITHUB_OUTPUT
-            echo "EOF" >> $env:GITHUB_OUTPUT
-          } else {
-            echo "NOTES=Release v${{ steps.version.outputs.VERSION }}" >> $env:GITHUB_OUTPUT
-          }
-        shell: pwsh
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/**/*.dll
-          body: ${{ steps.notes.outputs.NOTES }}
+          body: ${{ steps.notes.outputs.body }}
           generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
