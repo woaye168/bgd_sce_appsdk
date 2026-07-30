@@ -103,7 +103,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add registry.json
-          git commit -m "chore: registry.json 更新到 v${{ steps.version.outputs.VERSION }} [skip ci]" || exit 0
+          git diff --cached --quiet || git commit -m "chore: registry.json 更新到 v${{ steps.version.outputs.VERSION }} [skip ci]"
           git push origin HEAD:main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
