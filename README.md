@@ -1,26 +1,43 @@
-# bgd_sce_plugins
+# bgd_sce_plugins（应用清单仓库）
 
-bgd_sce_tools 官方插件仓库。
+bgd_sce_tools 官方**应用清单**仓库（WeGame 模式）。
+
+> 架构已从「DLL 插件」重构为「独立 EXE 应用」。本仓库只存应用清单，不再存应用代码。
 
 ## 结构
 
 ```
-plugins/
-  visual-injector/     # 模块To触编：把api下的Lua模块注入到触发编辑器中供触编调用
-    src/               # Rust 源码
-    Cargo.toml
-    plugin.json        # 插件元数据（id/name/version/description/author）
-registry.json          # 插件注册表（tools 拉取检查更新）
+registry.json    # 应用清单（bgd_sce_tools 应用市场拉取）
 ```
 
-## 插件开发
+## 应用清单格式
 
-1. 在 `plugins/` 下新建插件目录（如 `plugins/my-plugin/`）
-2. 实现 `bgd_sce_tools_sdk` 的 trait（参考 `visual-injector`）
-3. 编写 `plugin.json`（id/name/version/description/author）
-4. 提交后 CI/CD 自动编译 `.dll` 并发布到 Release
-5. `registry.json` 更新指向最新 Release
+```json
+{
+  "apps": [
+    {
+      "id": "visual-injector",
+      "name": "模块To触编",
+      "version": "0.4.0",
+      "description": "把api下的Lua模块注入到触发编辑器中供触编调用。",
+      "author": "BGD",
+      "download_url": "https://github.com/woaye168/sce_app_visual-injector/releases/download/v0.4.0/sce_app_visual-injector.exe",
+      "checksum": ""
+    }
+  ]
+}
+```
+
+## 应用仓库
+
+应用代码在独立仓库（命名约定 `sce_app_*`），各自维护 CI 发布 EXE 到 Release：
+
+- [sce_app_visual-injector](https://github.com/woaye168/sce_app_visual-injector)：模块To触编
+
+## 更新清单
+
+应用发布新 Release 后，更新 `registry.json` 的 `version` / `download_url`。
 
 ## 安装
 
-在 bgd_sce_tools 的「插件」页中，从「woaye168/bgd_sce_plugins」市场安装。
+在 bgd_sce_tools 的「应用」页中，从应用市场安装。
