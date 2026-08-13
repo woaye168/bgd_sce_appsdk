@@ -3,11 +3,12 @@
     {
       "id": "visual-injector",
       "name": "模块To触编",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "description": "把api下的Lua模块注入到触发编辑器中供触编调用。",
       "author": "BGD",
-      "download_url": "https://github.com/woaye168/sce_app_visual-injector/releases/download/v0.4.0/sce_app_visual-injector.exe",
-      "checksum": ""
+      "repo": "woaye168/sce_app_visual-injector",
+      "tag": "v0.4.1",
+      "asset_name": "sce_app_visual-injector.exe"
     }
   ]
 }
