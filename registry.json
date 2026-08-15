@@ -13,11 +13,11 @@
     {
       "id": "editor-patch",
       "name": "编辑器补丁",
-      "version": "0.1.0",
-      "description": "给星火编辑器打补丁：解除编辑器使用限制，注入可勾选启停的补丁框架。",
+      "version": "0.2.0",
+      "description": "给星火编辑器打补丁：解除使用限制、编辑器菜单扩展、解除项目文件监听，状态自检可一键重应用。",
       "author": "BGD",
       "repo": "woaye168/sce_app_editor-patch",
-      "tag": "v0.1.0",
+      "tag": "v0.2.0",
       "asset_name": "sce_app_editor-patch.exe"
     }
   ]
