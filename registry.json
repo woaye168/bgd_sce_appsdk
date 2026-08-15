@@ -9,6 +9,16 @@
       "repo": "woaye168/sce_app_visual-injector",
       "tag": "v0.4.1",
       "asset_name": "sce_app_visual-injector.exe"
+    },
+    {
+      "id": "editor-patch",
+      "name": "编辑器补丁",
+      "version": "0.1.0",
+      "description": "给星火编辑器打补丁：解除编辑器使用限制，注入可勾选启停的补丁框架。",
+      "author": "BGD",
+      "repo": "woaye168/sce_app_editor-patch",
+      "tag": "v0.1.0",
+      "asset_name": "sce_app_editor-patch.exe"
     }
   ]
 }
