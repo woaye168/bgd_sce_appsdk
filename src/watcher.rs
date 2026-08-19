@@ -7,9 +7,10 @@
 mod imp {
     use super::super::single_instance::{find_current_process_window, Guard};
     use std::sync::atomic::{AtomicBool, Ordering};
-    use windows_sys::Win32::Foundation::HWND;
+    use windows_sys::Win32::Foundation::{HWND, WPARAM, LPARAM};
     use windows_sys::Win32::UI::WindowsAndMessaging::{
-        SetForegroundWindow, ShowWindow, SW_HIDE, SW_RESTORE, SW_SHOW,
+        IsWindowVisible, PostMessageW, SetForegroundWindow, ShowWindow, SW_HIDE, SW_RESTORE,
+        SW_SHOW, SW_SHOWNA, WM_CLOSE,
     };
 
     static QUIT_REQUESTED: AtomicBool = AtomicBool::new(false);
@@ -56,10 +57,29 @@ mod imp {
                     show(hwnd);
                 }
                 if guard.wait_quit(100) {
+                    // 退出：先置标志给 UI 主循环一次正常关闭的机会（可见窗口会走 egui
+                    // 正常退出）；隐藏驻留时 UI 循环挂起不可靠——短等待后直接退出进程
+                    // （应用无未保存状态，宿主升级/联动停止场景）
                     QUIT_REQUESTED.store(true, Ordering::SeqCst);
+                    unsafe {
+                        if !hwnd.is_null() {
+                            PostMessageW(hwnd, WM_CLOSE, 0 as WPARAM, 0 as LPARAM);
+                        }
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(800));
+                    std::process::exit(0);
                 }
                 if guard.wait_refresh(50) {
                     REFRESH_REQUESTED.store(true, Ordering::SeqCst);
+                    // 隐藏驻留时 UI 循环挂起不 tick——用 显示→隐藏 脉冲强制唤醒一帧
+                    // （SW_SHOWNA 不激活窗口，用户无感知），让应用主循环消费刷新标志
+                    unsafe {
+                        if !hwnd.is_null() && IsWindowVisible(hwnd) == 0 {
+                            ShowWindow(hwnd, SW_SHOWNA);
+                            std::thread::sleep(std::time::Duration::from_millis(150));
+                            ShowWindow(hwnd, SW_HIDE);
+                        }
+                    }
                 }
             }
         });
