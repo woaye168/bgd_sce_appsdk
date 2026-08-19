@@ -72,7 +72,7 @@ clap = {{ version = "4", features = ["derive"] }}
 serde = {{ version = "1", features = ["derive"] }}
 serde_json = "1"
 rfd = "0.15"
-bgd_appsdk = {{ git = "https://github.com/woaye168/bgd_sce_appsdk" }}
+bgd_appsdk = "0.1"
 
 [profile.release]
 opt-level = 2
@@ -224,11 +224,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # bgd_appsdk 是 git 依赖（私有仓库）：配置 token 后 cargo 即可直接拉取
-      - name: Configure git credentials for private deps
-        shell: pwsh
-        run: git config --global url."https://x-access-token:${{{{ secrets.BGD_CROSS_REPO_PAT }}}}@github.com/".insteadOf "https://github.com/"
-
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Inject version from tag
@@ -275,7 +270,7 @@ cargo build --release
 git tag v0.x.0 && git push origin v0.x.0   # CI 出包（exe + app-release.json）
 ```
 
-版本号唯一来源是 git tag（Cargo.toml 固定 `0.0.0-dev`）。CI 的 git 依赖凭据需仓库 secret `BGD_CROSS_REPO_PAT`（有 bgd_sce_appsdk 读权限的 PAT）。
+版本号唯一来源是 git tag（Cargo.toml 固定 `0.0.0-dev`）。bgd_appsdk 来自 crates.io 公开包，无需任何私有凭据。
 "#))?;
 
     Ok(())
