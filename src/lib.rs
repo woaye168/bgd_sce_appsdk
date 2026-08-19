@@ -12,6 +12,7 @@
 //!   `watcher::take_refresh()` 处理退出与刷新
 //! - CLI 子命令（mcp/editor/logs/capture/notify 等短进程）应在 acquire 之前分发，不受单实例限制
 
+pub mod app;
 pub mod config;
 pub mod log;
 pub mod single_instance;
