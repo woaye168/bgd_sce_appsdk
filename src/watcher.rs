@@ -26,12 +26,10 @@ mod imp {
         REFRESH_REQUESTED.swap(false, Ordering::SeqCst)
     }
 
-    /// 启动看守线程。`background=true`（静默自启）时：主循环的 show 分支对所有 show 信号
-    /// 一律 SW_HIDE（信号在窗口创建前发出时，后续 wait_show 的超时循环也会在 hwnd 出现后立刻隐藏）；
-    /// 普通模式 show = SW_RESTORE/SW_SHOW/SetForegroundWindow。guard 移入线程持有。
+    /// 启动看守线程。`background=true`（静默自启）时：窗口起步即不可见（ui 壳 with_visible(false)），
+    /// show 信号（二次启动/宿主「打开」）= Win32 唤出；普通模式 show 同样唤出。
+    /// guard 移入线程持有（Drop 会释放单实例互斥体，不能提前析构）。
     pub fn spawn(guard: Guard, background: bool, prefix: &str) {
-        // 静默自启：无需再发 self show 信号——窗口起步即不可见（with_visible(false)，
-        // 彻底消除「先弹后隐」闪烁）；唤起信号由二次启动/宿主「打开」时发出
         let _ = prefix;
         std::thread::spawn(move || {
             let guard = guard;
@@ -39,23 +37,13 @@ mod imp {
             loop {
                 hwnd = find_current_process_window();
                 if guard.wait_show(200) {
-                    // show 信号 = 唤起窗口（二次启动/宿主「打开」）。background 模式下用于隐藏。
+                    // show 信号 = 唤起窗口（二次启动/宿主「打开」）
                     unsafe {
                         if !hwnd.is_null() {
-                            if background {
-                                ShowWindow(hwnd, SW_HIDE);
-                            } else {
-                                ShowWindow(hwnd, SW_RESTORE);
-                                ShowWindow(hwnd, SW_SHOW);
-                                SetForegroundWindow(hwnd);
-                            }
+                            ShowWindow(hwnd, SW_RESTORE);
+                            ShowWindow(hwnd, SW_SHOW);
+                            SetForegroundWindow(hwnd);
                         }
-                    }
-                }
-                // background 静默自启兜底：窗口晚于信号创建时，周期循环也会立刻隐藏
-                if background && !hwnd.is_null() && unsafe { IsWindowVisible(hwnd) } != 0 {
-                    unsafe {
-                        ShowWindow(hwnd, SW_HIDE);
                     }
                 }
                 if guard.wait_quit(100) {
