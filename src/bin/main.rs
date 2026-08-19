@@ -81,72 +81,27 @@ strip = true
 
     w("src/main.rs", &format!(r#"//! {name}（sce_app_{app_id}）：基于 bgd_appsdk 的标准应用骨架
 //!
-//! 已接入：AppShell 通用窗口壳 / 单实例 / --background 静默驻留 / --quit 优雅退出 /
-//! notify 解耦通知。业务只需在 ui_tab 里渲染各标签页内容。
+//! 公共逻辑（CLI 分发/单实例/看守线程/--background/--quit/notify/窗口壳）由
+//! bgd_appsdk::app::run 全托管——业务只需实现 ShellApp（标签页渲染）。
 
 // Windows 下不弹出黑色控制台窗口
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
 
-use clap::Parser;
-use std::path::PathBuf;
-
 const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 const APP_NAME: &str = "{name}";
 
-/// 单实例前缀（bgd_appsdk 单实例/事件通道的命名空间）
-#[cfg(windows)]
-const SI_PREFIX: &str = "{exe_name}";
-
-#[derive(Parser)]
-#[command(name = "{exe_name}", about = "{name}")]
-struct Args {{
-    /// 项目路径（宿主启动时透传）
-    #[arg(long)]
-    project_path: Option<String>,
-    /// 静默自启形态：不显示主窗口，驻留后台（宿主静默自启时透传）
-    #[arg(long)]
-    background: bool,
-}}
-
 fn main() -> eframe::Result<()> {{
-    // notify CLI（宿主解耦通知）：notify project_path=<项目根>
-    let raw: Vec<String> = std::env::args().skip(1).collect();
-    if raw.first().map(|s| s.as_str()) == Some("notify") {{
-        for pair in raw.iter().skip(1) {{
-            if let Some(v) = pair.strip_prefix("project_path=") {{
-                let root = PathBuf::from(v);
-                bgd_appsdk::config::set_last_project_path(&root);
-                #[cfg(windows)]
-                bgd_appsdk::single_instance::signal_refresh(SI_PREFIX);
-            }}
-        }}
-        return Ok(());
-    }}
-
-    // --quit：向已运行实例发「退出」信号后退出（宿主升级/联动停止用）
-    #[cfg(windows)]
-    if raw.iter().any(|a| a == "--quit") {{
-        bgd_appsdk::single_instance::signal_quit(SI_PREFIX);
-        return Ok(());
-    }}
-
-    // GUI 路径单实例：已运行则只发「唤起窗口」信号并退出
-    #[cfg(windows)]
-    let single_guard = match bgd_appsdk::single_instance::acquire(SI_PREFIX) {{
-        Some(g) => Some(g),
-        None => return Ok(()),
-    }};
-
-    let args = Args::parse();
-    let project_path = args.project_path.map(PathBuf::from);
-
-    #[cfg(windows)]
-    if let Some(g) = single_guard {{
-        bgd_appsdk::watcher::spawn(g, args.background, SI_PREFIX);
-    }}
-
-    let shell = bgd_appsdk::ui::AppShell::new(App::default(), APP_VERSION, project_path);
-    shell.run([720.0, 560.0], [600.0, 480.0], args.background)
+    bgd_appsdk::app::run(
+        bgd_appsdk::app::AppOptions {{
+            app_name: APP_NAME,
+            inner_size: [720.0, 560.0],
+            min_size: [600.0, 480.0],
+            si_prefix: None,
+            is_valid_project: Some(|p| p.join(".bgd").is_dir()),
+            app: App::default(),
+        }},
+        APP_VERSION,
+    )
 }}
 
 const TABS: &[bgd_appsdk::ui::ShellTab] = &[
