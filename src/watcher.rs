@@ -26,25 +26,20 @@ mod imp {
         REFRESH_REQUESTED.swap(false, Ordering::SeqCst)
     }
 
-    /// 启动看守线程。`background=true`（静默自启）时：
-    /// - 先看守线程在 run_native 事件循环启动**之前**发出一次 self show 信号（事件被设置并保持，
-    ///   不会被任何初始化逻辑覆盖）；
-    /// - 主循环的 show 分支在 background 模式下不显示窗口、只在首个 hwnd 出现时立即 SW_HIDE；
-    /// 这样窗口一旦创建就被确定性隐藏（不依赖 create_callback 时机、不与 run_native 竞态）。
-    /// guard 移入线程持有（Drop 会释放单实例互斥体，不能提前析构）。
+    /// 启动看守线程。`background=true`（静默自启）时：主循环的 show 分支对所有 show 信号
+    /// 一律 SW_HIDE（信号在窗口创建前发出时，后续 wait_show 的超时循环也会在 hwnd 出现后立刻隐藏）；
+    /// 普通模式 show = SW_RESTORE/SW_SHOW/SetForegroundWindow。guard 移入线程持有。
     pub fn spawn(guard: Guard, background: bool, prefix: &str) {
-        // 窗口创建前发出 self show 信号（事件保持置位，主循环首次 wait_show 即刻命中）
+        // 静默自启：先发一次 self show 信号（事件保持置位；即便主循环首次 wait_show 时窗口
+        // 尚未创建，事件已被消费，后续 200ms 周期循环也会在 hwnd 出现后立即 SW_HIDE）
         if background {
             super::super::single_instance::signal_show_self(prefix);
         }
         std::thread::spawn(move || {
             let guard = guard;
-            // 主循环用 hwnd（每次现查，窗口存在期间稳定）
             let mut hwnd: HWND = std::ptr::null_mut();
             loop {
-                if hwnd.is_null() {
-                    hwnd = find_current_process_window();
-                }
+                hwnd = find_current_process_window();
                 if guard.wait_show(200) {
                     unsafe {
                         if !hwnd.is_null() {
@@ -56,6 +51,12 @@ mod imp {
                                 SetForegroundWindow(hwnd);
                             }
                         }
+                    }
+                }
+                // background 静默自启兜底：窗口晚于信号创建时，周期循环也会立刻隐藏
+                if background && !hwnd.is_null() && unsafe { IsWindowVisible(hwnd) } != 0 {
+                    unsafe {
+                        ShowWindow(hwnd, SW_HIDE);
                     }
                 }
                 if guard.wait_quit(100) {
