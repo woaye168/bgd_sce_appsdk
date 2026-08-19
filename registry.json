@@ -13,11 +13,11 @@
     {
       "id": "editor-patch",
       "name": "编辑器补丁",
-      "version": "0.5.9",
+      "version": "0.5.10",
       "description": "给编辑器打补丁, 扩展原本功能, 包括 MCP控制等。",
       "author": "BGD",
       "repo": "woaye168/sce_app_editor-patch",
-      "tag": "v0.5.9",
+      "tag": "v0.5.10",
       "asset_name": "sce_app_editor-patch.exe",
       "default_auto_start": true
     }
