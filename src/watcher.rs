@@ -33,6 +33,20 @@ mod imp {
         let _ = prefix;
         std::thread::spawn(move || {
             let guard = guard;
+            // 静默自启：窗口创建后立刻 SW_HIDE（与 run_native 主线程并发；窗口一旦出现
+            // 即在下一拍隐藏，闪现 < 50ms，观感上等同「未弹出」）
+            if background {
+                for _ in 0..100 {
+                    let hwnd = find_current_process_window();
+                    if !hwnd.is_null() {
+                        unsafe {
+                            ShowWindow(hwnd, SW_HIDE);
+                        }
+                        break;
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(30));
+                }
+            }
             let mut hwnd: HWND = std::ptr::null_mut();
             loop {
                 hwnd = find_current_process_window();

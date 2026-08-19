@@ -80,10 +80,7 @@ impl<A: ShellApp> AppShell<A> {
                 .with_title(title)
                 .with_inner_size(inner_size)
                 .with_min_inner_size(min_size)
-                .with_position([((sw - inner_size[0]) / 2.0).max(0.0), ((sh - inner_size[1]) / 2.0).max(0.0)])
-                // 静默自启：起步即隐藏（彻底消除「先弹后隐」闪烁；
-                // 唤起已走看守线程 Win32 ShowWindow，不依赖 egui 的 Visible(true)）
-                .with_visible(!background),
+                .with_position([((sw - inner_size[0]) / 2.0).max(0.0), ((sh - inner_size[1]) / 2.0).max(0.0)]),
             ..Default::default()
         };
         eframe::run_native(
