@@ -15,4 +15,5 @@
 pub mod config;
 pub mod log;
 pub mod single_instance;
+pub mod ui;
 pub mod watcher;
