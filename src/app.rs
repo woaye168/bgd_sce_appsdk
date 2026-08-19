@@ -82,6 +82,8 @@ pub fn run<A: ShellApp>(opts: AppOptions<A>, version: &'static str) -> eframe::R
         None => return Ok(()),
     };
 
+    // background 由主线程按「运行环境」决定：宿主静默自启传入 --background；
+    // 用户显式启动（GUI 双击/宿主「打开」）不带该参数则前台运行
     let background = has_flag(&raw, "--background");
 
     // 项目路径：--project-path 传入且有效时作为初始项目

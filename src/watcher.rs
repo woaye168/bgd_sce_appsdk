@@ -41,6 +41,7 @@ mod imp {
             loop {
                 hwnd = find_current_process_window();
                 if guard.wait_show(200) {
+                    // show 信号 = 唤起窗口（二次启动/宿主「打开」）。background 模式下用于隐藏。
                     unsafe {
                         if !hwnd.is_null() {
                             if background {
