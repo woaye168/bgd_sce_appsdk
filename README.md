@@ -43,10 +43,10 @@ BGD SCE 应用生态的公共仓库（原 bgd_sce_plugins），双职责：
 ## 消费方式
 
 ```toml
-bgd_appsdk = { git = "https://github.com/woaye168/bgd_sce_appsdk" }
+bgd_appsdk = "0.1"   # crates.io 公开包（tag 触发 publish.yml 自动发布）
 ```
 
-私有仓库需配置 git 凭据（CI：`git config --global url."https://x-access-token:${{ github.token }}@github.com/".insteadOf "https://github.com/"`）。
+CLI 脚手架：`cargo install bgd_appsdk` 后 `bgd_appsdk new <app-id> --name <中文名>` 生成标准应用骨架。
 
 ## 现有使用方
 
