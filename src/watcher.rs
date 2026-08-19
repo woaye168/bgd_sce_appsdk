@@ -33,21 +33,28 @@ mod imp {
         let _ = prefix;
         std::thread::spawn(move || {
             let guard = guard;
-            // 静默自启：窗口创建后立刻 SW_HIDE（与 run_native 主线程并发；窗口一旦出现
-            // 即在下一拍隐藏，闪现 < 50ms，观感上等同「未弹出」）
+            // 静默自启：窗口创建后立刻 SW_HIDE，且持续强制保持隐藏（egui 初始化后续
+            // 会重新显示窗口——直到窗口稳定隐藏前每个周期都检查，之后交给 show 信号驱动）
+            let mut hwnd: HWND = std::ptr::null_mut();
             if background {
-                for _ in 0..100 {
-                    let hwnd = find_current_process_window();
-                    if !hwnd.is_null() {
-                        unsafe {
-                            ShowWindow(hwnd, SW_HIDE);
-                        }
+                for _ in 0..50 {
+                    let h = find_current_process_window();
+                    if !h.is_null() {
+                        hwnd = h;
                         break;
                     }
                     std::thread::sleep(std::time::Duration::from_millis(30));
                 }
+                // 连续隐藏若干拍：覆盖 egui 初始化期间可能的重新显示（实测 egui 会重新显示一次）
+                for _ in 0..20 {
+                    if !hwnd.is_null() && unsafe { IsWindowVisible(hwnd) } != 0 {
+                        unsafe {
+                            ShowWindow(hwnd, SW_HIDE);
+                        }
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                }
             }
-            let mut hwnd: HWND = std::ptr::null_mut();
             loop {
                 hwnd = find_current_process_window();
                 if guard.wait_show(200) {
