@@ -8,7 +8,7 @@ use crate::ui::{AppShell, ShellApp};
 use std::path::PathBuf;
 
 /// 应用入口配置
-pub struct AppOptions<A: ShellApp + Default> {
+pub struct AppOptions<A: ShellApp> {
     /// 窗口标题（不含版本号）
     pub app_name: &'static str,
     /// 初始/最小窗口尺寸
@@ -41,7 +41,7 @@ fn default_si_prefix() -> String {
 
 /// 应用统一入口（整个 main 函数体）。内部完成全部公共逻辑并启动窗口。
 /// `version` 传 `env!("CARGO_PKG_VERSION")`。
-pub fn run<A: ShellApp + Default>(opts: AppOptions<A>, version: &'static str) -> eframe::Result<()> {
+pub fn run<A: ShellApp>(opts: AppOptions<A>, version: &'static str) -> eframe::Result<()> {
     let raw: Vec<String> = std::env::args().skip(1).collect();
     let is_valid = opts.is_valid_project.unwrap_or(|p| p.is_dir());
 
