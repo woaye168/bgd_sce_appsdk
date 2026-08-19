@@ -30,11 +30,9 @@ mod imp {
     /// 一律 SW_HIDE（信号在窗口创建前发出时，后续 wait_show 的超时循环也会在 hwnd 出现后立刻隐藏）；
     /// 普通模式 show = SW_RESTORE/SW_SHOW/SetForegroundWindow。guard 移入线程持有。
     pub fn spawn(guard: Guard, background: bool, prefix: &str) {
-        // 静默自启：先发一次 self show 信号（事件保持置位；即便主循环首次 wait_show 时窗口
-        // 尚未创建，事件已被消费，后续 200ms 周期循环也会在 hwnd 出现后立即 SW_HIDE）
-        if background {
-            super::super::single_instance::signal_show_self(prefix);
-        }
+        // 静默自启：无需再发 self show 信号——窗口起步即不可见（with_visible(false)，
+        // 彻底消除「先弹后隐」闪烁）；唤起信号由二次启动/宿主「打开」时发出
+        let _ = prefix;
         std::thread::spawn(move || {
             let guard = guard;
             let mut hwnd: HWND = std::ptr::null_mut();
