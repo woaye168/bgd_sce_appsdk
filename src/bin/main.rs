@@ -142,7 +142,7 @@ fn main() -> eframe::Result<()> {{
 
     #[cfg(windows)]
     if let Some(g) = single_guard {{
-        bgd_appsdk::watcher::spawn(g, args.background);
+        bgd_appsdk::watcher::spawn(g, args.background, SI_PREFIX);
     }}
 
     let shell = bgd_appsdk::ui::AppShell::new(App::default(), APP_VERSION, project_path);

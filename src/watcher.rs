@@ -26,15 +26,21 @@ mod imp {
         REFRESH_REQUESTED.swap(false, Ordering::SeqCst)
     }
 
-    /// 启动看守线程。`background=true` 时找到主窗口后立刻 Win32 隐藏（静默自启）。
+    /// 启动看守线程。`background=true`（静默自启）时：
+    /// - 先看守线程在 run_native 事件循环启动**之前**发出一次 self show 信号（事件被设置并保持，
+    ///   不会被任何初始化逻辑覆盖）；
+    /// - 主循环的 show 分支在 background 模式下不显示窗口、只在首个 hwnd 出现时立即 SW_HIDE；
+    /// 这样窗口一旦创建就被确定性隐藏（不依赖 create_callback 时机、不与 run_native 竞态）。
     /// guard 移入线程持有（Drop 会释放单实例互斥体，不能提前析构）。
-    pub fn spawn(guard: Guard, background: bool) {
+    pub fn spawn(guard: Guard, background: bool, prefix: &str) {
+        // 窗口创建前发出 self show 信号（事件保持置位，主循环首次 wait_show 即刻命中）
+        if background {
+            super::super::single_instance::signal_show_self(prefix);
+        }
         std::thread::spawn(move || {
             let guard = guard;
             // 主循环用 hwnd（每次现查，窗口存在期间稳定）
             let mut hwnd: HWND = std::ptr::null_mut();
-            // 静默自启：首次 show 信号（应用自身在窗口创建后发出）时先隐藏
-            let mut hidden_once = false;
             loop {
                 if hwnd.is_null() {
                     hwnd = find_current_process_window();
@@ -42,8 +48,7 @@ mod imp {
                 if guard.wait_show(200) {
                     unsafe {
                         if !hwnd.is_null() {
-                            if background && !hidden_once {
-                                hidden_once = true;
+                            if background {
                                 ShowWindow(hwnd, SW_HIDE);
                             } else {
                                 ShowWindow(hwnd, SW_RESTORE);
