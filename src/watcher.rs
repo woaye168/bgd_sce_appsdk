@@ -31,30 +31,34 @@ mod imp {
     pub fn spawn(guard: Guard, background: bool) {
         std::thread::spawn(move || {
             let guard = guard;
+            // 静默自启：先等主窗口创建出来立刻隐藏（与 eframe::run_native 主线程并发，
+            // 循环检测直到出现一次后立刻 SW_HIDE——晚于创建点的轮询可能错过「已创建且可见」窗口）
+            if background {
+                for _ in 0..50 {
+                    let hwnd = find_current_process_window();
+                    if !hwnd.is_null() {
+                        unsafe {
+                            ShowWindow(hwnd, SW_HIDE);
+                        }
+                        break;
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(50));
+                }
+            }
+            // 主循环用 hwnd（每次现查，窗口存在期间稳定）
             let mut hwnd: HWND = std::ptr::null_mut();
-            // 轮询等待主窗口创建完成
-            for _ in 0..50 {
-                hwnd = find_current_process_window();
-                if !hwnd.is_null() {
-                    break;
-                }
-                std::thread::sleep(std::time::Duration::from_millis(100));
-            }
-            if background && !hwnd.is_null() {
-                unsafe {
-                    ShowWindow(hwnd, SW_HIDE);
-                }
-            }
-            let show = |hwnd: HWND| unsafe {
-                if !hwnd.is_null() {
-                    ShowWindow(hwnd, SW_RESTORE);
-                    ShowWindow(hwnd, SW_SHOW);
-                    SetForegroundWindow(hwnd);
-                }
-            };
             loop {
+                if hwnd.is_null() {
+                    hwnd = find_current_process_window();
+                }
                 if guard.wait_show(200) {
-                    show(hwnd);
+                    unsafe {
+                        if !hwnd.is_null() {
+                            ShowWindow(hwnd, SW_RESTORE);
+                            ShowWindow(hwnd, SW_SHOW);
+                            SetForegroundWindow(hwnd);
+                        }
+                    }
                 }
                 if guard.wait_quit(100) {
                     // 退出：先置标志给 UI 主循环一次正常关闭的机会（可见窗口会走 egui
