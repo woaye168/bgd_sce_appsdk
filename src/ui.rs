@@ -73,11 +73,14 @@ impl<A: ShellApp> AppShell<A> {
     /// 也不能让看守线程与 run_native 主线程竞态轮询——实测会错过「已创建且可见」窗口）。
     pub fn run(mut self, inner_size: [f32; 2], min_size: [f32; 2], background: bool) -> eframe::Result<()> {
         let title = format!("{} v{}", self.app.app_title(), self.version);
+        // 屏幕正中显示：按主屏（1920x1080 兜底）与窗口尺寸估算左上角（egui 默认定位偏左上）
+        let (sw, sh) = (1920.0f32, 1080.0f32);
         let options = eframe::NativeOptions {
             viewport: egui::ViewportBuilder::default()
                 .with_title(title)
                 .with_inner_size(inner_size)
-                .with_min_inner_size(min_size),
+                .with_min_inner_size(min_size)
+                .with_position([((sw - inner_size[0]) / 2.0).max(0.0), ((sh - inner_size[1]) / 2.0).max(0.0)]),
             ..Default::default()
         };
         eframe::run_native(
