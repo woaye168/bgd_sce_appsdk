@@ -1,51 +1,54 @@
-# bgd_sce_plugins（应用清单仓库）
+# bgd_sce_appsdk（应用公共 SDK + 分发清单）
 
-bgd_sce_tools 官方**应用清单**仓库（WeGame 模式）。
+BGD SCE 应用生态的公共仓库（原 bgd_sce_plugins），双职责：
 
-> 架构已从「DLL 插件」重构为「独立 EXE 应用」。本仓库只存应用清单，不再存应用代码。
+1. **`registry.json`**：应用市场分发清单（宿主 [bgd_sce_tools](https://github.com/woaye168/bgd_sce_tools) 读取）。**极简格式**——只登记应用 id/name/repo，版本/描述/作者/版本说明等元数据来自各应用仓库 CI 合成的 `app-release.json` asset，**应用发版不需要改动本清单**。
+2. **Rust crate `bgd_appsdk`**（`src/`）：sce_app_* 应用的公共基建，避免重复实现。
 
-## 结构
-
-```
-registry.json    # 应用清单（bgd_sce_tools 应用市场拉取）
-```
-
-## 应用清单格式
-
-> 仓库已转私有：release asset 直链（releases/download/...）带 token 也无法下载，清单不再存 URL，
-> 改用 `repo` + `tag` + `asset_name` 三字段，由 bgd_sce_tools 走 GitHub API 定位并下载（需在工具设置中配置 GitHub Token）。
+## registry.json 格式
 
 ```json
 {
   "apps": [
-    {
-      "id": "visual-injector",
-      "name": "模块To触编",
-      "version": "0.4.0",
-      "description": "把api下的Lua模块注入到触发编辑器中供触编调用。",
-      "author": "BGD",
-      "repo": "woaye168/sce_app_visual-injector",
-      "tag": "v0.4.0",
-      "asset_name": "sce_app_visual-injector.exe"
-    }
+    { "id": "editor-patch", "name": "编辑器补丁", "repo": "woaye168/sce_app_editor-patch" }
   ]
 }
 ```
 
-- `repo`：应用所在的 GitHub 仓库（owner/repo）
-- `tag`：Release tag；填 `"latest"` 表示始终取最新 Release
-- `asset_name`：Release 附件文件名（必须与 CI 上传的 asset 名一致）
+宿主读取链：registry（raw）→ `repos/<repo>/releases/latest` → 读 `app-release.json` asset（版本/描述/作者/asset 名/版本说明/默认自启）→ 下载 exe asset。
 
-## 应用仓库
+## 应用侧约定（新应用接入清单）
 
-应用代码在独立仓库（命名约定 `sce_app_*`），各自维护 CI 发布 EXE 到 Release：
+1. 仓库根放静态元数据 `app.json`（不含版本）：
 
-- [sce_app_visual-injector](https://github.com/woaye168/sce_app_visual-injector)：模块To触编
+```json
+{ "id": "...", "name": "...", "description": "...", "author": "BGD", "asset_name": "xxx.exe", "default_auto_start": false }
+```
 
-## 更新清单
+2. release 工作流里 CI 合成 `app-release.json` asset（= app.json + version(tag) + release_notes），随 exe 一起上传。
+3. 在 registry.json 登记一行（仅此一次，之后发版不再动清单）。
 
-应用发布新 Release 后，更新 `registry.json` 的 `version` / `tag`（`asset_name` 一般不变）。
+## bgd_appsdk 内容（src/）
 
-## 安装
+| 模块 | 内容 |
+| --- | --- |
+| `single_instance` | 命名互斥体单实例 + 唤起/退出/刷新命名事件 + 本进程主窗口查找（Win32） |
+| `watcher` | 看守线程：等信号并 Win32 驱动主窗口（隐藏/唤起）；退出/刷新标志；--quit 不依赖 UI tick（exit 兜底） |
+| `ui` | 通用窗口壳 AppShell：中文字体/标题尺寸约定/项目栏/选项卡/状态栏/标志轮询（应用实现 ShellApp trait 注册标签即可） |
+| `log` | 按日期分文件的应用日志（`<项目>/.bgd/log/<app>-YYYY-MM-DD.log`） |
+| `config` | 应用配置持久化（exe 旁 `<app>.config.json`；最近项目；路径正斜杠统一） |
 
-在 bgd_sce_tools 的「应用」页中，从应用市场安装（需先在工具设置中配置 GitHub Token）。
+宿主协议（各应用遵循）：`--background` 静默驻留、`--quit` 优雅退出、`notify key=value` 解耦通知。
+
+## 消费方式
+
+```toml
+bgd_appsdk = { git = "https://github.com/woaye168/bgd_sce_appsdk" }
+```
+
+私有仓库需配置 git 凭据（CI：`git config --global url."https://x-access-token:${{ github.token }}@github.com/".insteadOf "https://github.com/"`）。
+
+## 现有使用方
+
+- [sce_app_editor-patch](https://github.com/woaye168/sce_app_editor-patch)
+- [sce_app_visual-injector](https://github.com/woaye168/sce_app_visual-injector)
