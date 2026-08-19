@@ -67,9 +67,11 @@ impl<A: ShellApp> AppShell<A> {
         self.app.on_project_changed(project.as_deref());
     }
 
-    /// 运行窗口（标题/尺寸约定 + 中文字体；visibility 由调用方通过 background 参数控制壳内的
-    /// 看守线程隐藏，壳不负责隐藏窗口本身）
-    pub fn run(mut self, inner_size: [f32; 2], min_size: [f32; 2]) -> eframe::Result<()> {
+    /// 运行窗口（标题/尺寸约定 + 中文字体）。
+    /// `background=true`（静默自启）时：窗口先创建 → 通知看守线程立刻 Win32 隐藏（自身发起
+    /// show 信号触发其 show 分支后置 SW_HIDE；egui 的 with_visible(false) 起步不可靠，
+    /// 也不能让看守线程与 run_native 主线程竞态轮询——实测会错过「已创建且可见」窗口）。
+    pub fn run(mut self, inner_size: [f32; 2], min_size: [f32; 2], background: bool) -> eframe::Result<()> {
         let title = format!("{} v{}", self.app.app_title(), self.version);
         let options = eframe::NativeOptions {
             viewport: egui::ViewportBuilder::default()
@@ -83,6 +85,10 @@ impl<A: ShellApp> AppShell<A> {
             options,
             Box::new(move |cc| {
                 setup_chinese_font(&cc.egui_ctx);
+                if background {
+                    // 静默自启：窗口创建完成后立刻触发看守线程隐藏（信号通道与唤起同路）
+                    ctx_mark_background();
+                }
                 Ok(Box::new(self))
             }),
         )
@@ -158,6 +164,22 @@ impl<A: ShellApp> eframe::App for AppShell<A> {
         });
     }
 }
+
+/// 静默自启标记：窗口创建后通知看守线程立刻隐藏（自身发 show 信号，看守线程 show 分支
+/// 在 background 模式下后置 SW_HIDE——不在 update 里用 ViewportCommand（不可靠））
+#[cfg(windows)]
+fn ctx_mark_background() {
+    // 无需做窗口操作——只发信号；看守线程取信号后立即 SW_HIDE（它持有 hwnd）
+    // 前缀取自当前 exe 文件名（与应用的 acquire 前缀一致：sce_app_<name>）
+    let stem = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.file_stem().map(|s| s.to_string_lossy().into_owned()))
+        .unwrap_or_default();
+    crate::single_instance::signal_show_self(&stem);
+}
+
+#[cfg(not(windows))]
+fn ctx_mark_background() {}
 
 /// 加载系统中文字体（微软雅黑），egui 默认字体不含中文
 pub fn setup_chinese_font(ctx: &egui::Context) {

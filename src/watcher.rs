@@ -31,22 +31,10 @@ mod imp {
     pub fn spawn(guard: Guard, background: bool) {
         std::thread::spawn(move || {
             let guard = guard;
-            // 静默自启：先等主窗口创建出来立刻隐藏（与 eframe::run_native 主线程并发，
-            // 循环检测直到出现一次后立刻 SW_HIDE——晚于创建点的轮询可能错过「已创建且可见」窗口）
-            if background {
-                for _ in 0..50 {
-                    let hwnd = find_current_process_window();
-                    if !hwnd.is_null() {
-                        unsafe {
-                            ShowWindow(hwnd, SW_HIDE);
-                        }
-                        break;
-                    }
-                    std::thread::sleep(std::time::Duration::from_millis(50));
-                }
-            }
             // 主循环用 hwnd（每次现查，窗口存在期间稳定）
             let mut hwnd: HWND = std::ptr::null_mut();
+            // 静默自启：首次 show 信号（应用自身在窗口创建后发出）时先隐藏
+            let mut hidden_once = false;
             loop {
                 if hwnd.is_null() {
                     hwnd = find_current_process_window();
@@ -54,9 +42,14 @@ mod imp {
                 if guard.wait_show(200) {
                     unsafe {
                         if !hwnd.is_null() {
-                            ShowWindow(hwnd, SW_RESTORE);
-                            ShowWindow(hwnd, SW_SHOW);
-                            SetForegroundWindow(hwnd);
+                            if background && !hidden_once {
+                                hidden_once = true;
+                                ShowWindow(hwnd, SW_HIDE);
+                            } else {
+                                ShowWindow(hwnd, SW_RESTORE);
+                                ShowWindow(hwnd, SW_SHOW);
+                                SetForegroundWindow(hwnd);
+                            }
                         }
                     }
                 }

@@ -103,6 +103,11 @@ mod imp {
         set_event(&format!("{prefix}_{EV_REFRESH}"));
     }
 
+    /// 自身发「唤起窗口」信号（静默自启用：通知本进程看守线程立刻隐藏窗口）
+    pub fn signal_show_self(prefix: &str) {
+        set_event(&format!("{prefix}_{EV_SHOW}"));
+    }
+
     /// 精确获取本进程主窗口（PID 匹配 + 标题非空；egui 主窗口有标题，辅助窗口无标题）
     pub fn find_current_process_window() -> HANDLE {
         use windows_sys::Win32::Foundation::{HWND, LPARAM};
