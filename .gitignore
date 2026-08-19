@@ -1,4 +1,5 @@
 # Rust
+target/
 plugins/**/target/
 
 # 系统
