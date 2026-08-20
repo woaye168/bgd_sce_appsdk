@@ -4,7 +4,7 @@
 
 ## 项目定位
 
-BGD SCE 应用生态的**公共 SDK 仓库**（原 bgd_sce_plugins），双职责：
+BGD SCE 应用生态的**公共 SDK 仓库** ，双职责：
 
 1. **`registry.json`**：应用市场分发清单（宿主 [bgd_sce_tools](https://github.com/woaye168/bgd_sce_tools) 读取，列出应用 id/name/repo）。
 2. **Rust crate `bgd_appsdk`**（`src/`）：sce_app_* 应用的公共基建，避免重复实现。
