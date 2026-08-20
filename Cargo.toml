@@ -1,6 +1,6 @@
 [package]
 name = "bgd_appsdk"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "BGD SCE 应用公共 SDK：单实例/看守线程/日志/配置/通用 UI（供 sce_app_* 应用复用）"
 license = "AGPL-3.0"

@@ -20,14 +20,14 @@ BGD SCE 应用生态的**公共 SDK 仓库** ，双职责：
 | `log` | 按日期分文件的应用日志（`<项目>/.bgd/log/<app>-YYYY-MM-DD.log`） |
 | `config` | 应用配置持久化（exe 旁 `<app>.config.json`；最近项目；路径正斜杠统一） |
 
-**使用方约定**：应用只需实现 `ShellApp` 并调 `bgd_appsdk::app::run`（公共逻辑全托管）。宿主侧协议：`--background` 静默驻留、`--quit` 优雅退出、`notify key=value` 解耦通知。
+**使用方约定**：应用只需实现 `ShellApp` 并调 `bgd_appsdk::app::run`（公共逻辑全托管）。宿主侧协议：`--background` 静默驻留、`--quit` 优雅退出、`notify key=value` 解耦通知。**命名契约**：宿主按 `<id>.exe` 落盘，单实例/信号前缀一律由 appsdk 按 exe 名推导（`app::default_si_prefix`），应用方禁止硬编码。
 
 **关键结论（改动前必读）**：egui 窗口隐藏时事件循环休眠，信号处理不能放 UI update，也不能依赖 ViewportCommand——必须看守线程直接 Win32（QQ/微信式驻留同款做法，实测定稿）。
 
 ## 消费方式
 
 ```toml
-bgd_appsdk = "0.1"   # crates.io 公开包（tag 触发 publish.yml 自动发布）
+bgd_appsdk = "0.2"   # crates.io 公开包（tag 触发 publish.yml 自动发布）
 ```
 
 CLI 脚手架：`cargo install bgd_appsdk` 后 `bgd_appsdk new <app-id> --name <中文名>` 生成标准应用骨架。

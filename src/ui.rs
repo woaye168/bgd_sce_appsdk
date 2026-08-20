@@ -68,9 +68,9 @@ impl<A: ShellApp> AppShell<A> {
     }
 
     /// 运行窗口（标题/尺寸约定 + 中文字体）。
-    /// `background=true`（静默自启）时：窗口先创建 → 通知看守线程立刻 Win32 隐藏（自身发起
-    /// show 信号触发其 show 分支后置 SW_HIDE；egui 的 with_visible(false) 起步不可靠，
-    /// 也不能让看守线程与 run_native 主线程竞态轮询——实测会错过「已创建且可见」窗口）。
+    /// `background=true`（静默自启）时：窗口正常创建，隐藏由看守线程确定性处理——
+    /// 找到本进程主窗口后连续多拍 SW_HIDE，覆盖 egui 初始化期间的重新显示
+    /// （egui 的 with_visible(false) 起步不可靠，实测会重新显示一次）。
     pub fn run(mut self, inner_size: [f32; 2], min_size: [f32; 2], background: bool) -> eframe::Result<()> {
         let title = format!("{} v{}", self.app.app_title(), self.version);
         // 屏幕正中显示：按主屏（1920x1080 兜底）与窗口尺寸估算左上角（egui 默认定位偏左上）

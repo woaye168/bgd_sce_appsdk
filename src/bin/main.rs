@@ -216,7 +216,7 @@ jobs:
 
     w("AGENTS.md", &format!(r#"# AGENTS.md — sce_app_{app_id}
 
-{name}（bgd_sce_tools 应用市场的独立应用）。基于 **bgd_appsdk**（git 依赖，仓库 [bgd_sce_appsdk](https://github.com/woaye168/bgd_sce_appsdk)）：单实例/看守线程/日志/应用配置/通用窗口壳 AppShell 等公共基建，禁止在本仓库重复实现（UI 经 `ShellApp` trait 注册标签页即可）。
+{name}（bgd_sce_tools 应用市场的独立应用）。基于 **bgd_appsdk**（crates.io 公开包，仓库 [bgd_sce_appsdk](https://github.com/woaye168/bgd_sce_appsdk)）：单实例/看守线程/日志/应用配置/通用窗口壳 AppShell 等公共基建，禁止在本仓库重复实现（UI 经 `ShellApp` trait 注册标签页即可）。
 
 ## 构建与发布
 

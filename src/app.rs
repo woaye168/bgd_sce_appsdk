@@ -31,8 +31,9 @@ fn has_flag(raw: &[String], key: &str) -> bool {
     raw.iter().any(|a| a == key)
 }
 
-/// 默认单实例前缀：当前 exe 文件名（sce_app_<id>）
-fn default_si_prefix() -> String {
+/// 默认单实例前缀：当前 exe 文件名（sce_app_<id>）。
+/// 命名契约：宿主按 `<id>.exe` 落盘，单实例/信号前缀一律由本函数推导，应用方禁止硬编码。
+pub fn default_si_prefix() -> String {
     std::env::current_exe()
         .ok()
         .and_then(|p| p.file_stem().map(|s| s.to_string_lossy().into_owned()))

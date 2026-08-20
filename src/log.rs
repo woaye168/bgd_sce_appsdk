@@ -29,11 +29,20 @@ pub fn log(app_name: &str, project_root: Option<&Path>, editor_root: Option<&Pat
     if let Some(parent) = path.parent() {
         let _ = fs::create_dir_all(parent);
     }
-    let timestamp = std::time::SystemTime::now()
+    let secs = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())
-        .unwrap_or(0);
-    let line = format!("[{timestamp}] [{level}] {message}\n");
+        .unwrap_or(0) as i64
+        + 8 * 3600;
+    let days = secs.div_euclid(86400);
+    let rem = secs.rem_euclid(86400);
+    let (y, m, d) = civil_from_days(days);
+    let line = format!(
+        "[{y:04}-{m:02}-{d:02} {:02}:{:02}:{:02}] [{level}] {message}\n",
+        rem / 3600,
+        (rem % 3600) / 60,
+        rem % 60
+    );
     use std::io::Write;
     if let Ok(mut f) = fs::OpenOptions::new().create(true).append(true).open(&path) {
         let _ = f.write_all(line.as_bytes());
@@ -41,23 +50,28 @@ pub fn log(app_name: &str, project_root: Option<&Path>, editor_root: Option<&Pat
 }
 
 /// 当天日期（YYYY-MM-DD，UTC+8）
-fn today() -> String {
+pub fn today() -> String {
     let secs = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())
-        .unwrap_or(0);
-    let days = ((secs + 8 * 3600) / 86400) as i64;
-    let z = days + 719468;
+        .unwrap_or(0) as i64
+        + 8 * 3600;
+    let (y, m, d) = civil_from_days(secs.div_euclid(86400));
+    format!("{y:04}-{m:02}-{d:02}")
+}
+
+/// days-from-unix-epoch → 年月日（Howard Hinnant 算法）
+pub fn civil_from_days(z: i64) -> (i64, u32, u32) {
+    let z = z + 719468;
     let era = z.div_euclid(146097);
     let doe = z.rem_euclid(146097);
     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
     let y = yoe + era * 400;
     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
     let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let y = if m <= 2 { y + 1 } else { y };
-    format!("{y:04}-{m:02}-{d:02}")
+    let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
+    (if m <= 2 { y + 1 } else { y }, m, d)
 }
 
 #[cfg(test)]
