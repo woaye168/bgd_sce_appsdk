@@ -30,7 +30,12 @@ BGD SCE 应用生态的**公共 SDK 仓库** ，双职责：
 bgd_appsdk = "0.2"   # crates.io 公开包（tag 触发 publish.yml 自动发布）
 ```
 
-CLI 脚手架：`cargo install bgd_appsdk` 后 `bgd_appsdk new <app-id> --name <中文名>` 生成标准应用骨架。
+CLI 脚手架：`cargo install bgd_appsdk` 后 `bgd_appsdk new <app-id> --name <中文名>` 生成标准应用骨架（`src/bin/main.rs` 模板）：
+
+- `Cargo.toml`：依赖 `bgd_appsdk = "0.2"`（crates.io），不引入 clap
+- `src/main.rs`：入口（`app::run` 一行起壳）+ 应用状态 + `ShellApp` 壳实现（`ui_tab` 只做分发）
+- `src/ui/`：`mod.rs` + 示例页面文件（main_page/settings），页面 impl 分散定义
+- `app.json` / `.github/workflows/release.yml`（tag 出包）/ `AGENTS.md`（AI 优化模板：项目定位/技术栈/目录结构/使用方约定/构建发布/修改守则）
 
 ## 构建与测试
 
