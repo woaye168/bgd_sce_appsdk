@@ -25,5 +25,9 @@ jobs:
           $cargo = $cargo -replace '(?m)^version = "[^"]*"', "version = `"$ver`""
           Set-Content Cargo.toml $cargo -NoNewline -Encoding utf8
 
+      # 质量门禁：测试失败阻塞发布
+      - name: Run tests
+        run: cargo test
+
       - name: Publish to crates.io
         run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} --allow-dirty
