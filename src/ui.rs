@@ -39,6 +39,8 @@ pub struct AppShell<A: ShellApp> {
     tabs: Vec<ShellTab>,
     active: String,
     project: Option<std::path::PathBuf>,
+    /// 驻留模式（--background 静默自启）：窗口 X = 隐藏（假关闭，服务常开），真退出走宿主 --quit
+    resident: bool,
 }
 
 impl<A: ShellApp> AppShell<A> {
@@ -52,6 +54,7 @@ impl<A: ShellApp> AppShell<A> {
             tabs,
             active,
             project: None,
+            resident: false,
         };
         if let Some(p) = initial_project {
             shell.set_project(Some(p));
@@ -70,8 +73,10 @@ impl<A: ShellApp> AppShell<A> {
     /// 运行窗口（标题/尺寸约定 + 中文字体）。
     /// `background=true`（静默自启）时：窗口正常创建，隐藏由看守线程确定性处理——
     /// 找到本进程主窗口后连续多拍 SW_HIDE，覆盖 egui 初始化期间的重新显示
-    /// （egui 的 with_visible(false) 起步不可靠，实测会重新显示一次）。
+    /// （egui 的 with_visible(false) 起步不可靠，实测会重新显示一次）；
+    /// 同时进入驻留模式：窗口 X = 隐藏（假关闭），真退出走宿主 --quit。
     pub fn run(mut self, inner_size: [f32; 2], min_size: [f32; 2], background: bool) -> eframe::Result<()> {
+        self.resident = background;
         let title = format!("{} v{}", self.app.app_title(), self.version);
         // 屏幕正中显示：按主屏（1920x1080 兜底）与窗口尺寸估算左上角（egui 默认定位偏左上）
         let (sw, sh) = (1920.0f32, 1080.0f32);
@@ -110,6 +115,13 @@ impl<A: ShellApp> eframe::App for AppShell<A> {
                     self.set_project(Some(p));
                 }
             }
+        }
+        // 驻留模式：窗口 X = 隐藏而非退出（静默自启的应用相当于服务，需常开；
+        // 再次打开经宿主/二次启动的 show 信号唤出，真退出走宿主 --quit）
+        #[cfg(windows)]
+        if self.resident && ctx.input(|i| i.viewport().close_requested()) {
+            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+            crate::watcher::hide_main_window();
         }
         // 周期唤醒（隐藏驻留时保持 update 触发）
         ctx.request_repaint_after(std::time::Duration::from_millis(500));

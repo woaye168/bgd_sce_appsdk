@@ -26,6 +26,16 @@ mod imp {
         REFRESH_REQUESTED.swap(false, Ordering::SeqCst)
     }
 
+    /// 隐藏本进程主窗口（驻留应用「假关闭」用；与 show 信号的 SW_RESTORE/SW_SHOW 对称）
+    pub fn hide_main_window() {
+        let h = find_current_process_window();
+        if !h.is_null() {
+            unsafe {
+                ShowWindow(h, SW_HIDE);
+            }
+        }
+    }
+
     /// 启动看守线程。`background=true`（静默自启）时：窗口起步即不可见（ui 壳 with_visible(false)），
     /// show 信号（二次启动/宿主「打开」）= Win32 唤出；普通模式 show 同样唤出。
     /// guard 移入线程持有（Drop 会释放单实例互斥体，不能提前析构）。
@@ -108,6 +118,7 @@ mod stub {
     pub fn take_refresh() -> bool {
         false
     }
+    pub fn hide_main_window() {}
 }
 
 #[cfg(not(windows))]

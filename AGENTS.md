@@ -20,7 +20,7 @@ BGD SCE 应用生态的**公共 SDK 仓库** ，双职责：
 | `log` | 按日期分文件的应用日志（`<项目>/.bgd/log/<app>-YYYY-MM-DD.log`） |
 | `config` | 应用配置持久化（exe 旁 `<app>.config.json`；最近项目；路径正斜杠统一） |
 
-**使用方约定**：应用只需实现 `ShellApp` 并调 `bgd_appsdk::app::run`（公共逻辑全托管）。宿主侧协议：`--background` 静默驻留、`--quit` 优雅退出、`notify key=value` 解耦通知。**命名契约**：宿主按 `<id>.exe` 落盘，单实例/信号前缀一律由 appsdk 按 exe 名推导（`app::default_si_prefix`），应用方禁止硬编码。
+**使用方约定**：应用只需实现 `ShellApp` 并调 `bgd_appsdk::app::run`（公共逻辑全托管）。宿主侧协议：`--background` 静默驻留、`--quit` 优雅退出、`notify key=value` 解耦通知。**命名契约**：宿主按 `<id>.exe` 落盘，单实例/信号前缀一律由 appsdk 按 exe 名推导（`app::default_si_prefix`），应用方禁止硬编码。**驻留语义**：`--background` 启动的应用窗口 X = 隐藏（假关闭，服务常开；再次打开经宿主/二次启动的 show 信号唤出），真退出只走宿主 `--quit`；不带 `--background` 的前台启动窗口 X = 正常退出。宿主「打开」不做单开拦截——第二实例向运行中实例发 show 信号唤出窗口后自行退出。
 
 **关键结论（改动前必读）**：egui 窗口隐藏时事件循环休眠，信号处理不能放 UI update，也不能依赖 ViewportCommand——必须看守线程直接 Win32（QQ/微信式驻留同款做法，实测定稿）。
 
