@@ -9,6 +9,11 @@
       "id": "editor-patch",
       "name": "编辑器补丁",
       "repo": "woaye168/sce_app_editor-patch"
+    },
+    {
+      "id": "mini-runtime",
+      "name": "脱机运行时",
+      "repo": "woaye168/sce_app_mini-runtime"
     }
   ]
 }
