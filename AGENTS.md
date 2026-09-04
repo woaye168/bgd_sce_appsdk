@@ -48,3 +48,7 @@ cargo test
 
 - [sce_app_editor-patch](https://github.com/woaye168/sce_app_editor-patch)
 - [sce_app_visual-injector](https://github.com/woaye168/sce_app_visual-injector)
+
+## AI 工具纪律（Trae）
+
+- **同一文件的多个编辑必须串行**：SearchReplace 并行编辑同一文件存在 read-modify-write 竞态——各调用均报成功，实际互相覆盖静默丢编辑（甚至新旧文本交织）。一条消息对同一文件只发一个编辑；不同文件才可并行；批量编辑后复读关键区域复核落盘。
