@@ -14,6 +14,11 @@
       "id": "mini-runtime",
       "name": "脱机运行时",
       "repo": "woaye168/sce_app_mini-runtime"
+    },
+    {
+      "id": "docs",
+      "name": "文档站",
+      "repo": "woaye168/sce_app_docs"
     }
   ]
 }
